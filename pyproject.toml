@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "skald"
+version = "0.1.0"
+description = "Arctic oral companion & audiobook compiler: sentence-chunked neural TTS and multi-chapter M4B muxer"
+readme = "README.md"
+authors = [{ name = "SpanishSyntax", email = "spanishsyntax@pyritelabs.cc" }]
+license = { text = "MIT" }
+requires-python = ">=3.11"
+keywords = ["audiobook", "m4b", "tts", "edge-tts", "cli", "frost", "iceberg", "audio", "narrator"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Environment :: Console",
+  "Operating System :: POSIX :: Linux",
+  "Operating System :: MacOS",
+  "Programming Language :: Python :: 3",
+  "Topic :: Multimedia :: Sound/Audio :: Speech",
+  "Topic :: Utilities",
+]
+dependencies = [
+  "prism",
+  "edge-tts>=6.1.0",
+  "mutagen>=1.47.0",
+  "pydub>=0.25.1",
+]
+
+[project.optional-dependencies]
+test = [
+  "pytest>=7.0",
+]
+
+[project.scripts]
+skald = "skald.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["skald*"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

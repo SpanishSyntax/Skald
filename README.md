@@ -1,0 +1,116 @@
+# 🎙️ Skald
+
+> **Arctic Oral Companion & Multi-Chapter M4B Audiobook Compiler**
+
+Skald is a Frost-native neural speech synthesizer, oral companion compiler, and audiobook packager. Named after the Old Norse bards who recited epic sagas, histories, and technical lore across frozen polar nights, Skald takes written transcripts, lecture notes, or markdown course companions and turns them into high-fidelity, chapter-indexed M4B audiobooks and MP3 audio series.
+
+---
+
+## ✨ Features
+
+- 📜 **Conversational Transcript Ingestion**: Parses markdown transcripts with frontmatter metadata (`title`, `author`, `album`) and automatic section/heading splitting.
+- 🧊 **Sentence-Level Neural Chunking**: Splits dense narrative text at sentence boundaries (avoiding the ~3,500 character payload drops of Azure TTS) with exponential retry backoff and timeout recovery.
+- 🔖 **True QuickTime / MPEG-4 Chapter Markers**: Generates standard `FFMETADATA1` structures with millisecond precision and embeds navigable chapter points directly into `.m4b` containers.
+- 🪡 **Multi-Chapter Master Stitching (`skald stitch`)**: Discovers standalone chapter files, calculates relative timeline offsets, tags metadata/cover art, and compiles the master companion audiobook.
+- 🎙️ **Voice Discovery (`skald voices`)**: Live discovery and filtering of Microsoft Edge-TTS neural voices across locales (`en-US`, `nl-NL`, `de-DE`, etc.) and genders.
+- 🔍 **Audiobook Inspector (`skald inspect`)**: Inspects durations, bitrates, tags, and chapter markers in a crystalline Prism terminal panel.
+- ❄️ **Frost Ecosystem Integration**: Powered by `prism` for ANSI styling, error diagnostics, and progress spinners. Fully packaged with reproducible Nix Flake, NixOS, and Home Manager modules.
+
+---
+
+## 💻 CLI Usage
+
+```text
+usage: skald [-h] [-V] [--color {auto,always,never}] [--no-color] {narrate,recite,stitch,voices,inspect} ...
+
+Arctic oral companion & multi-chapter M4B audiobook compiler.
+
+subcommands:
+  narrate (recite)   Synthesize a markdown transcript into M4B & MP3
+  stitch             Stitch multiple chapters into a master M4B audiobook
+  voices             Query and list available neural voices
+  inspect            Inspect M4B metadata and chapters
+```
+
+### 1. Synthesize a Markdown Transcript (`skald narrate`)
+```bash
+# Narrate a single chapter transcript
+skald narrate transcripts/ch01_foundations.md
+
+# Specify custom neural voice and speech rate
+skald narrate transcripts/ch01_foundations.md --voice en-US-GuyNeural --rate "+5%" -o ./dist
+```
+
+### 2. Stitch Multiple Chapters into a Master Audiobook (`skald stitch`)
+```bash
+# Scan a directory of chapter M4B files and stitch into master audiobook
+skald stitch ./audio/chapters/ \
+  --output ./audio/SC42056_Master_Course_Companion.m4b \
+  --title "SC42056 Optimization Master Companion" \
+  --author "TU Delft SC42056" \
+  --album "Optimization for Systems and Control" \
+  --cover ./cover.png \
+  --mp3
+```
+
+### 3. Discover Neural Voices (`skald voices`)
+```bash
+# List top recommended voices
+skald voices
+
+# Filter by locale and gender
+skald voices --locale en-US --gender Male
+skald voices --locale nl-NL
+```
+
+### 4. Inspect an Audiobook (`skald inspect`)
+```bash
+skald inspect ./audio/SC42056_Master_Course_Companion.m4b
+```
+
+---
+
+## 📐 Pipeline Architecture
+
+```mermaid
+flowchart TD
+    MD["Markdown Transcript (.md)"] --> Parse["Parse Frontmatter & Section Headings"]
+    Parse --> Clean["Sanitize Markdown & Formulas"]
+    Clean --> Chunk["Sentence Chunking (max 2,500 chars)"]
+    Chunk --> Synth["Edge-TTS Neural Synthesizer (with Async Retry)"]
+    Synth --> SecMerge["Concatenate Section Audio Segments"]
+    SecMerge --> Timeline["Calculate Millisecond Chapter Timestamps"]
+    Timeline --> FFMeta["Generate FFMETADATA1 Manifest"]
+    FFMeta --> M4B["FFmpeg Mux to M4B (AAC) + Mutagen QuickTime Tags"]
+    M4B --> MP3["FFmpeg MP3 Export (LAME 64k)"]
+```
+
+---
+
+## ❄️ Nix Flake & Home Manager Configuration
+
+Add Skald to your NixOS or Home Manager flake inputs:
+
+```nix
+{
+  inputs = {
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    skald.url = "path:/home/usurper/Icebergs/Skald";
+  };
+}
+```
+
+### Home Manager Module
+```nix
+{
+  programs.skald = {
+    enable = true;
+  };
+}
+```
+
+---
+
+## 📄 License
+
+MIT © [SpanishSyntax](https://github.com/SpanishSyntax)
