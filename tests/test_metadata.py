@@ -25,7 +25,7 @@ def test_parse_markdown_transcript() -> None:
     sample_md = """---
 title: "Foundations of Optimization"
 author: "Antigravity Skald"
-album: "SC42056 Course"
+album: "Mathematical Foundations"
 ---
 
 # 1. Introduction to the Problem

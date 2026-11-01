@@ -50,7 +50,7 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
             "properties": {
                 "chapter_dir": {
                     "type": "string",
-                    "description": "Directory containing chapter M4B or MP3 files.",
+                    "description": "Directory or manifest file (audiobook.yaml, book.toml) declaring chapters (default: current directory).",
                 },
                 "output_path": {
                     "type": "string",
@@ -149,27 +149,32 @@ def execute_tool(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
             if not check_ffmpeg():
                 return {"status": "error", "error": "ffmpeg and ffprobe must be installed in PATH."}
 
-            c_dir = Path(arguments["chapter_dir"]).resolve()
-            if not c_dir.is_dir():
-                return {"status": "error", "error": f"Directory not found: {c_dir}"}
+            target = Path(arguments.get("chapter_dir", arguments.get("manifest_path", "."))).resolve()
+            if not target.exists():
+                return {"status": "error", "error": f"Target path not found: {target}"}
 
-            files = discover_chapter_files(c_dir, extension=".m4b")
+            from skald.discovery import resolve_ordered_chapters
+            m_meta, files = resolve_ordered_chapters(target, extension=".m4b")
             if not files:
-                files = discover_chapter_files(c_dir, extension=".mp3")
+                m_meta, files = resolve_ordered_chapters(target, extension=".mp3")
             if not files:
-                return {"status": "error", "error": f"No chapter audio files found in {c_dir}"}
+                return {"status": "error", "error": f"No chapter audio files found for {target}"}
 
             out_m4b = Path(arguments["output_path"]).resolve()
             include_mp3 = arguments.get("include_mp3", True)
             out_mp3 = out_m4b.with_suffix(".mp3") if include_mp3 else None
 
+            title = arguments.get("title") or m_meta.get("title", "Audiobook Companion")
+            author = arguments.get("author") or m_meta.get("author", "Skald Narrator")
+            album = arguments.get("album") or m_meta.get("album", "Audiobook Series")
+
             m4b_res, mp3_res = stitch_audiobook(
                 chapter_files=files,
                 output_m4b=out_m4b,
                 output_mp3=out_mp3,
-                title=arguments.get("title", "Master Course Companion"),
-                author=arguments.get("author", "Skald Narrator"),
-                album=arguments.get("album", "Course Audio Companion"),
+                title=title,
+                author=author,
+                album=album,
             )
 
             return {

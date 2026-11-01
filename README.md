@@ -43,12 +43,12 @@ skald narrate transcripts/ch01_foundations.md --voice en-US-GuyNeural --rate "+5
 
 ### 2. Stitch Multiple Chapters into a Master Audiobook (`skald stitch`)
 ```bash
-# Scan a directory of chapter M4B files and stitch into master audiobook
+# Scan a directory or manifest of chapter audio files and stitch into master audiobook
 skald stitch ./audio/chapters/ \
-  --output ./audio/SC42056_Master_Course_Companion.m4b \
-  --title "SC42056 Optimization Master Companion" \
-  --author "TU Delft SC42056" \
-  --album "Optimization for Systems and Control" \
+  --output ./audio/Master_Companion.m4b \
+  --title "Distributed Systems Companion" \
+  --author "Systems Architecture Group" \
+  --album "Technical Audio Companions" \
   --cover ./cover.png \
   --mp3
 ```
@@ -65,7 +65,7 @@ skald voices --locale nl-NL
 
 ### 4. Inspect an Audiobook (`skald inspect`)
 ```bash
-skald inspect ./audio/SC42056_Master_Course_Companion.m4b
+skald inspect ./audio/Master_Companion.m4b
 ```
 
 ---

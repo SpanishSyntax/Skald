@@ -7,20 +7,14 @@ import shutil
 from pathlib import Path
 from typing import Callable, Sequence
 
+from skald.discovery import natural_sort_key, resolve_ordered_chapters
 from skald.metadata import ChapterInfo, build_ffmetadata, tag_m4b_file
 from skald.muxer import concat_audio_segments, export_mp3, get_audio_duration_ms, mux_m4b_with_chapters
 
 
-def natural_sort_key(s: Path | str) -> list[int | str]:
-    """Sort filenames with numbers naturally (e.g. ch1, ch2, ch10)."""
-    text = s.name if isinstance(s, Path) else s
-    return [int(c) if c.isdigit() else c.lower() for c in re.split(r"(\d+)", text)]
-
-
 def discover_chapter_files(source_dir: Path, extension: str = ".m4b") -> list[Path]:
-    """Find and naturally sort chapter files within a directory."""
-    files = [f for f in source_dir.glob(f"*{extension}") if not f.name.startswith("Master_") and not f.name.startswith("SC42056_Master_")]
-    files.sort(key=natural_sort_key)
+    """Find and order chapter files using manifest declaration or natural sort."""
+    _, files = resolve_ordered_chapters(source_dir, extension=extension)
     return files
 
 
@@ -48,9 +42,9 @@ def stitch_audiobook(
 
         dur_ms = get_audio_duration_ms(chap_file)
         clean_title = chap_file.stem.replace("_", " ").title()
-        # Clean ch01_ / chapter_01_ prefixes if present
+        # Clean generic ch01_ / chapter_01_ prefixes if present
         clean_title = re.sub(r"^(Ch\d+[\s_-]*|Chapter[\s_-]*\d+[\s_-]*)", "", clean_title, flags=re.IGNORECASE).strip()
-        display_title = f"Chapter {idx:02d}: {clean_title}"
+        display_title = f"Chapter {idx:02d}: {clean_title}" if clean_title else f"Chapter {idx:02d}"
 
         start_ms = current_time_ms
         end_ms = current_time_ms + dur_ms

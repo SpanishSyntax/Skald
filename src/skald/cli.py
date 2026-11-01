@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from skald import __version__
+from skald.discovery import resolve_ordered_chapters
 from skald.mcp import StdioMCPServer
 from skald.metadata import read_audiobook_metadata
 from skald.muxer import check_ffmpeg
@@ -184,10 +185,14 @@ def cmd_stitch(args: argparse.Namespace) -> int:
         return 1
 
     input_paths: list[Path] = []
+    discovered_meta: dict[str, Any] = {}
+
     for item in args.inputs:
         p = Path(item).resolve()
-        if p.is_dir():
-            input_paths.extend(discover_chapter_files(p, extension=args.ext))
+        if p.is_dir() or p.suffix.lower() in (".yaml", ".yml", ".toml"):
+            m_meta, ch_files = resolve_ordered_chapters(p, extension=args.ext)
+            discovered_meta.update(m_meta)
+            input_paths.extend(ch_files)
         elif p.is_file():
             input_paths.append(p)
 
@@ -198,6 +203,10 @@ def cmd_stitch(args: argparse.Namespace) -> int:
         else:
             render_error_panel("No Chapter Files", err)
         return 1
+
+    final_title = args.title if args.title != "Master Course Companion" else discovered_meta.get("title", args.title)
+    final_author = args.author if args.author != "Skald Narrator" else discovered_meta.get("author", args.author)
+    final_album = args.album if args.album != "Course Audio Companion" else discovered_meta.get("album", args.album)
 
     output_m4b = Path(args.output).resolve()
     output_mp3 = output_m4b.with_suffix(".mp3") if args.mp3 else None
@@ -216,9 +225,9 @@ def cmd_stitch(args: argparse.Namespace) -> int:
             chapter_files=input_paths,
             output_m4b=output_m4b,
             output_mp3=output_mp3,
-            title=args.title,
-            author=args.author,
-            album=args.album,
+            title=final_title,
+            author=final_author,
+            album=final_album,
             cover_image=cover_path,
             progress_callback=progress,
         )
