@@ -71,6 +71,16 @@ except ImportError:
     def handle_version_arg(parser: Any, version: str) -> None:
         parser.add_argument("-V", "--version", action="version", version=f"%(prog)s {version}")
 
+    def add_agent_args(parser: Any) -> None:
+        parser.add_argument("-A", "--agent", action="store_true", help="Agent output mode")
+        parser.add_argument("--json", action="store_true", help="JSON output mode")
+
+    def handle_agent_args(args: Any) -> None:
+        pass
+
+    def apply_agent_args(args: Any) -> None:
+        pass
+
     def render_panel(
         title: str,
         lines: Sequence[str] | str,
@@ -247,6 +257,9 @@ __all__ = [
     "apply_color_args",
     "handle_color_args",
     "handle_version_arg",
+    "add_agent_args",
+    "apply_agent_args",
+    "handle_agent_args",
     "render_panel",
     "render_error_panel",
     "prompt_input",
