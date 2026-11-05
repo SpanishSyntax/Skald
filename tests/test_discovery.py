@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+
 from skald.discovery import natural_sort_key, resolve_ordered_chapters
 
 
@@ -20,13 +21,16 @@ def test_resolve_ordered_chapters_from_yaml(tmp_path: Path) -> None:
     ch2.write_text("# Chapter 2", encoding="utf-8")
 
     manifest = tmp_path / "audiobook.yaml"
-    manifest.write_text("""
+    manifest.write_text(
+        """
 title: "Distributed Systems"
 author: "Alice"
 chapters:
   - 02_theory.md
   - 01_intro.md
-""", encoding="utf-8")
+""",
+        encoding="utf-8",
+    )
 
     meta, chapters = resolve_ordered_chapters(manifest)
     assert meta["title"] == "Distributed Systems"

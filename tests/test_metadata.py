@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
-from skald.metadata import ChapterInfo, build_ffmetadata, parse_markdown_transcript, sanitize_title
+from skald.metadata import (
+    ChapterInfo,
+    build_ffmetadata,
+    parse_markdown_transcript,
+)
 from skald.synthesizer import chunk_text, sanitize_speech_text
 
 
@@ -45,8 +49,12 @@ Points on the boundary define basic feasible solutions.
 
 def test_build_ffmetadata() -> None:
     chaps = [
-        ChapterInfo(number=1, title="Chapter 01: Foundations", start_ms=0, end_ms=50000),
-        ChapterInfo(number=2, title="Chapter 02: Simplex", start_ms=50000, end_ms=120000),
+        ChapterInfo(
+            number=1, title="Chapter 01: Foundations", start_ms=0, end_ms=50000
+        ),
+        ChapterInfo(
+            number=2, title="Chapter 02: Simplex", start_ms=50000, end_ms=120000
+        ),
     ]
     meta_str = build_ffmetadata(chaps, title="Master Course", author="Narrator")
     assert ";FFMETADATA1" in meta_str

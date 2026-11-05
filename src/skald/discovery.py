@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 import re
 import tomllib
 from pathlib import Path
@@ -54,7 +53,9 @@ def _parse_simple_yaml_manifest(text: str) -> dict[str, Any]:
                         if ":" in item_content:
                             # Dict entry in list, e.g. - path: ch01.md
                             d_key, d_val = item_content.split(":", 1)
-                            sub_items.append({d_key.strip(): d_val.strip().strip("\"'")})
+                            sub_items.append(
+                                {d_key.strip(): d_val.strip().strip("\"'")}
+                            )
                         else:
                             sub_items.append(item_content)
                     i += 1
@@ -138,7 +139,9 @@ def resolve_ordered_chapters(
     for doc_name in ("index.md", "master.md", "report.md", "book.md"):
         doc_path = base_dir / doc_name
         if doc_path.is_file():
-            parsed_meta, _ = parse_markdown_transcript(doc_path.read_text(encoding="utf-8"))
+            parsed_meta, _ = parse_markdown_transcript(
+                doc_path.read_text(encoding="utf-8")
+            )
             if "chapters" in parsed_meta:
                 raw = parsed_meta["chapters"]
                 # Comma or newline separated
@@ -154,7 +157,9 @@ def resolve_ordered_chapters(
     for ord_name in ("order.txt", "_order.txt", "chapters.txt"):
         ord_path = base_dir / ord_name
         if ord_path.is_file():
-            lines = [ln.strip() for ln in ord_path.read_text(encoding="utf-8").splitlines()]
+            lines = [
+                ln.strip() for ln in ord_path.read_text(encoding="utf-8").splitlines()
+            ]
             for ln in lines:
                 if ln and not ln.startswith("#"):
                     p = (base_dir / ln).resolve()
@@ -166,7 +171,8 @@ def resolve_ordered_chapters(
     # Tier 4: Zero-config fallback to natural sorting
     # Ignore master output files or temp/hidden files
     matched = [
-        f for f in base_dir.glob(f"*{extension}")
+        f
+        for f in base_dir.glob(f"*{extension}")
         if not f.name.lower().startswith(("master", ".", "_"))
     ]
     matched.sort(key=natural_sort_key)

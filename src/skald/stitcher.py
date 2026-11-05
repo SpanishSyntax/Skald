@@ -7,9 +7,14 @@ import shutil
 from pathlib import Path
 from typing import Callable, Sequence
 
-from skald.discovery import natural_sort_key, resolve_ordered_chapters
+from skald.discovery import resolve_ordered_chapters
 from skald.metadata import ChapterInfo, build_ffmetadata, tag_m4b_file
-from skald.muxer import concat_audio_segments, export_mp3, get_audio_duration_ms, mux_m4b_with_chapters
+from skald.muxer import (
+    concat_audio_segments,
+    export_mp3,
+    get_audio_duration_ms,
+    mux_m4b_with_chapters,
+)
 
 
 def discover_chapter_files(source_dir: Path, extension: str = ".m4b") -> list[Path]:
@@ -38,13 +43,22 @@ def stitch_audiobook(
 
     for idx, chap_file in enumerate(chapter_files, 1):
         if progress_callback:
-            progress_callback(f"Indexing chapter {idx}/{total}: {chap_file.name}", idx, total)
+            progress_callback(
+                f"Indexing chapter {idx}/{total}: {chap_file.name}", idx, total
+            )
 
         dur_ms = get_audio_duration_ms(chap_file)
         clean_title = chap_file.stem.replace("_", " ").title()
         # Clean generic ch01_ / chapter_01_ prefixes if present
-        clean_title = re.sub(r"^(Ch\d+[\s_-]*|Chapter[\s_-]*\d+[\s_-]*)", "", clean_title, flags=re.IGNORECASE).strip()
-        display_title = f"Chapter {idx:02d}: {clean_title}" if clean_title else f"Chapter {idx:02d}"
+        clean_title = re.sub(
+            r"^(Ch\d+[\s_-]*|Chapter[\s_-]*\d+[\s_-]*)",
+            "",
+            clean_title,
+            flags=re.IGNORECASE,
+        ).strip()
+        display_title = (
+            f"Chapter {idx:02d}: {clean_title}" if clean_title else f"Chapter {idx:02d}"
+        )
 
         start_ms = current_time_ms
         end_ms = current_time_ms + dur_ms

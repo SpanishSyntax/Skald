@@ -14,14 +14,13 @@ from skald.discovery import resolve_ordered_chapters
 from skald.mcp import StdioMCPServer
 from skald.metadata import read_audiobook_metadata
 from skald.muxer import check_ffmpeg
-from skald.stitcher import discover_chapter_files, stitch_audiobook
+from skald.stitcher import stitch_audiobook
 from skald.synthesizer import synthesize_transcript
 from skald.ui import (
     add_agent_args,
     add_color_args,
     handle_agent_args,
     handle_color_args,
-    handle_version_arg,
     render_error_panel,
     render_panel,
     ui,
@@ -46,7 +45,11 @@ def format_duration(seconds: float) -> str:
 def output_structured_data(data: dict[str, Any], args: argparse.Namespace) -> int:
     """Render machine-readable output in JSON or TOON format when requested."""
     is_json = getattr(args, "json", False) or getattr(ui, "is_json", False)
-    is_agent = getattr(args, "agent", False) or getattr(ui, "is_agent", False) or getattr(args, "client", False)
+    is_agent = (
+        getattr(args, "agent", False)
+        or getattr(ui, "is_agent", False)
+        or getattr(args, "client", False)
+    )
 
     if is_json:
         if hasattr(ui, "json"):
@@ -80,7 +83,7 @@ def cmd_voices(args: argparse.Namespace) -> int:
         "status": "ok",
         "total_voices": len(voices),
         "recommended": RECOMMENDED_VOICES,
-        "voices": voices[:args.limit],
+        "voices": voices[: args.limit],
     }
 
     if output_structured_data(payload, args) == 0:
@@ -91,16 +94,24 @@ def cmd_voices(args: argparse.Namespace) -> int:
         "─" * 74,
     ]
 
-    for v in voices[:args.limit]:
-        lines.append(f"{v['name']:<32} {v['locale']:<10} {v['gender']:<8} {v['friendly'][:22]}")
+    for v in voices[: args.limit]:
+        lines.append(
+            f"{v['name']:<32} {v['locale']:<10} {v['gender']:<8} {v['friendly'][:22]}"
+        )
 
     if len(voices) > args.limit:
-        lines.append(ui.dim(f"... and {len(voices) - args.limit} more voices (use --limit to show more)"))
+        lines.append(
+            ui.dim(
+                f"... and {len(voices) - args.limit} more voices (use --limit to show more)"
+            )
+        )
 
     lines.append("")
     lines.append(ui.bold_cyan("Recommended Arctic Narrators:"))
     for k, v in RECOMMENDED_VOICES.items():
-        lines.append(f"  • {ui.bold(k)}: {v['short_name']} ({v['gender']}) - {v['description']}")
+        lines.append(
+            f"  • {ui.bold(k)}: {v['short_name']} ({v['gender']}) - {v['description']}"
+        )
 
     render_panel("Skald Neural Voices", lines, border_color="0;36")
     return 0
@@ -125,7 +136,9 @@ def cmd_narrate(args: argparse.Namespace) -> int:
             render_error_panel("File Not Found", err)
         return 1
 
-    out_dir = Path(args.output_dir).resolve() if args.output_dir else transcript_file.parent
+    out_dir = (
+        Path(args.output_dir).resolve() if args.output_dir else transcript_file.parent
+    )
 
     if not (getattr(args, "json", False) or getattr(args, "agent", False)):
         ui.info(f"Synthesizing transcript: {ui.bold(transcript_file.name)}")
@@ -204,16 +217,30 @@ def cmd_stitch(args: argparse.Namespace) -> int:
             render_error_panel("No Chapter Files", err)
         return 1
 
-    final_title = args.title if args.title != "Master Course Companion" else discovered_meta.get("title", args.title)
-    final_author = args.author if args.author != "Skald Narrator" else discovered_meta.get("author", args.author)
-    final_album = args.album if args.album != "Course Audio Companion" else discovered_meta.get("album", args.album)
+    final_title = (
+        args.title
+        if args.title != "Master Course Companion"
+        else discovered_meta.get("title", args.title)
+    )
+    final_author = (
+        args.author
+        if args.author != "Skald Narrator"
+        else discovered_meta.get("author", args.author)
+    )
+    final_album = (
+        args.album
+        if args.album != "Course Audio Companion"
+        else discovered_meta.get("album", args.album)
+    )
 
     output_m4b = Path(args.output).resolve()
     output_mp3 = output_m4b.with_suffix(".mp3") if args.mp3 else None
     cover_path = Path(args.cover).resolve() if args.cover else None
 
     if not (getattr(args, "json", False) or getattr(args, "agent", False)):
-        ui.info(f"Stitching {len(input_paths)} chapter files into {ui.bold_cyan(output_m4b.name)}...")
+        ui.info(
+            f"Stitching {len(input_paths)} chapter files into {ui.bold_cyan(output_m4b.name)}..."
+        )
 
     def progress(msg: str, current: int, total: int) -> None:
         if not (getattr(args, "json", False) or getattr(args, "agent", False)):
@@ -324,7 +351,9 @@ def main(argv: list[str] | None = None) -> int:
     parent_parser = argparse.ArgumentParser(add_help=False)
     add_color_args(parent_parser)
     add_agent_args(parent_parser)
-    parent_parser.add_argument("--client", action="store_true", help="Machine client mode (alias for --agent)")
+    parent_parser.add_argument(
+        "--client", action="store_true", help="Machine client mode (alias for --agent)"
+    )
 
     parser = argparse.ArgumentParser(
         prog="skald",
@@ -335,35 +364,76 @@ def main(argv: list[str] | None = None) -> int:
     subparsers = parser.add_subparsers(dest="subcommand", help="Skald subcommands")
 
     # narrate
-    p_narrate = subparsers.add_parser("narrate", aliases=["recite"], parents=[parent_parser], help="Synthesize a markdown transcript")
+    p_narrate = subparsers.add_parser(
+        "narrate",
+        aliases=["recite"],
+        parents=[parent_parser],
+        help="Synthesize a markdown transcript",
+    )
     p_narrate.add_argument("transcript", help="Path to markdown transcript file")
-    p_narrate.add_argument("--voice", default="en-US-GuyNeural", help="Neural TTS voice (default: en-US-GuyNeural)")
-    p_narrate.add_argument("--rate", default="+0%", help="Speech rate adjustment (e.g. +5%%, -10%%)")
+    p_narrate.add_argument(
+        "--voice",
+        default="en-US-GuyNeural",
+        help="Neural TTS voice (default: en-US-GuyNeural)",
+    )
+    p_narrate.add_argument(
+        "--rate", default="+0%", help="Speech rate adjustment (e.g. +5%%, -10%%)"
+    )
     p_narrate.add_argument("--output-dir", "-o", help="Target output directory")
 
     # stitch
-    p_stitch = subparsers.add_parser("stitch", parents=[parent_parser], help="Stitch multiple chapters into master M4B")
-    p_stitch.add_argument("inputs", nargs="+", help="Directory or chapter audio files to stitch")
-    p_stitch.add_argument("--output", "-o", default="Master_Audiobook.m4b", help="Output M4B filename")
-    p_stitch.add_argument("--title", default="Master Course Companion", help="Audiobook title")
+    p_stitch = subparsers.add_parser(
+        "stitch",
+        parents=[parent_parser],
+        help="Stitch multiple chapters into master M4B",
+    )
+    p_stitch.add_argument(
+        "inputs", nargs="+", help="Directory or chapter audio files to stitch"
+    )
+    p_stitch.add_argument(
+        "--output", "-o", default="Master_Audiobook.m4b", help="Output M4B filename"
+    )
+    p_stitch.add_argument(
+        "--title", default="Master Course Companion", help="Audiobook title"
+    )
     p_stitch.add_argument("--author", default="Skald Narrator", help="Audiobook author")
-    p_stitch.add_argument("--album", default="Course Audio Companion", help="Album / series title")
+    p_stitch.add_argument(
+        "--album", default="Course Audio Companion", help="Album / series title"
+    )
     p_stitch.add_argument("--cover", help="Cover art image (PNG or JPG)")
-    p_stitch.add_argument("--ext", default=".m4b", help="File extension to scan when directory given (.m4b or .mp3)")
-    p_stitch.add_argument("--mp3", action="store_true", help="Also generate stitched MP3")
+    p_stitch.add_argument(
+        "--ext",
+        default=".m4b",
+        help="File extension to scan when directory given (.m4b or .mp3)",
+    )
+    p_stitch.add_argument(
+        "--mp3", action="store_true", help="Also generate stitched MP3"
+    )
 
     # voices
-    p_voices = subparsers.add_parser("voices", parents=[parent_parser], help="Query and list available neural voices")
-    p_voices.add_argument("--locale", "-l", help="Filter by locale code (e.g. en-US, nl-NL)")
+    p_voices = subparsers.add_parser(
+        "voices", parents=[parent_parser], help="Query and list available neural voices"
+    )
+    p_voices.add_argument(
+        "--locale", "-l", help="Filter by locale code (e.g. en-US, nl-NL)"
+    )
     p_voices.add_argument("--gender", "-g", help="Filter by gender (Male or Female)")
-    p_voices.add_argument("--limit", type=int, default=25, help="Maximum voices to display (default: 25)")
+    p_voices.add_argument(
+        "--limit", type=int, default=25, help="Maximum voices to display (default: 25)"
+    )
 
     # inspect
-    p_inspect = subparsers.add_parser("inspect", parents=[parent_parser], help="Inspect M4B metadata and chapters")
+    p_inspect = subparsers.add_parser(
+        "inspect", parents=[parent_parser], help="Inspect M4B metadata and chapters"
+    )
     p_inspect.add_argument("file", help="Path to M4B audiobook file")
 
     # mcp
-    p_mcp = subparsers.add_parser("mcp", parents=[parent_parser], help="Run Model Context Protocol (MCP) stdio server")
+    p_mcp = subparsers.add_parser(
+        "mcp",
+        parents=[parent_parser],
+        help="Run Model Context Protocol (MCP) stdio server",
+    )
 
     args = parser.parse_args(argv)
 

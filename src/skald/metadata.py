@@ -36,7 +36,9 @@ def sanitize_title(title: str) -> str:
     return t
 
 
-def parse_markdown_transcript(md_text: str) -> tuple[dict[str, str], list[SectionMarker]]:
+def parse_markdown_transcript(
+    md_text: str,
+) -> tuple[dict[str, str], list[SectionMarker]]:
     """Parse a markdown companion transcript into header metadata and sections."""
     lines = md_text.splitlines()
     metadata: dict[str, str] = {}
@@ -148,7 +150,11 @@ def tag_m4b_file(
 
     if cover_image and cover_image.is_file():
         data = cover_image.read_bytes()
-        image_format = MP4Cover.FORMAT_PNG if cover_image.suffix.lower() == ".png" else MP4Cover.FORMAT_JPEG
+        image_format = (
+            MP4Cover.FORMAT_PNG
+            if cover_image.suffix.lower() == ".png"
+            else MP4Cover.FORMAT_JPEG
+        )
         audio["covr"] = [MP4Cover(data, image_format=image_format)]
 
     audio.save()
@@ -167,6 +173,7 @@ def read_audiobook_metadata(m4b_path: Path) -> dict[str, Any]:
 
     try:
         from mutagen.mp4 import MP4
+
         audio = MP4(str(m4b_path))
         info["duration"] = audio.info.length
         info["bitrate"] = audio.info.bitrate

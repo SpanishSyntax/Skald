@@ -11,7 +11,7 @@ from typing import Any
 from skald import __version__
 from skald.metadata import read_audiobook_metadata
 from skald.muxer import check_ffmpeg
-from skald.stitcher import discover_chapter_files, stitch_audiobook
+from skald.stitcher import stitch_audiobook
 from skald.synthesizer import synthesize_transcript
 from skald.voices import query_voices
 
@@ -119,7 +119,10 @@ def execute_tool(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
     try:
         if name == "skald_narrate":
             if not check_ffmpeg():
-                return {"status": "error", "error": "ffmpeg and ffprobe must be installed in PATH."}
+                return {
+                    "status": "error",
+                    "error": "ffmpeg and ffprobe must be installed in PATH.",
+                }
 
             t_path = Path(arguments["transcript_path"]).resolve()
             if not t_path.is_file():
@@ -147,18 +150,27 @@ def execute_tool(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
 
         elif name == "skald_stitch":
             if not check_ffmpeg():
-                return {"status": "error", "error": "ffmpeg and ffprobe must be installed in PATH."}
+                return {
+                    "status": "error",
+                    "error": "ffmpeg and ffprobe must be installed in PATH.",
+                }
 
-            target = Path(arguments.get("chapter_dir", arguments.get("manifest_path", "."))).resolve()
+            target = Path(
+                arguments.get("chapter_dir", arguments.get("manifest_path", "."))
+            ).resolve()
             if not target.exists():
                 return {"status": "error", "error": f"Target path not found: {target}"}
 
             from skald.discovery import resolve_ordered_chapters
+
             m_meta, files = resolve_ordered_chapters(target, extension=".m4b")
             if not files:
                 m_meta, files = resolve_ordered_chapters(target, extension=".mp3")
             if not files:
-                return {"status": "error", "error": f"No chapter audio files found for {target}"}
+                return {
+                    "status": "error",
+                    "error": f"No chapter audio files found for {target}",
+                }
 
             out_m4b = Path(arguments["output_path"]).resolve()
             include_mp3 = arguments.get("include_mp3", True)
@@ -190,7 +202,9 @@ def execute_tool(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
             gender = arguments.get("gender")
             limit = arguments.get("limit", 30)
 
-            voices = asyncio.run(query_voices(locale_filter=locale, gender_filter=gender))
+            voices = asyncio.run(
+                query_voices(locale_filter=locale, gender_filter=gender)
+            )
             return {
                 "status": "ok",
                 "total_found": len(voices),

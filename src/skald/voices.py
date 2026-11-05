@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Any, Sequence
+from typing import Any
 
 RECOMMENDED_VOICES = {
     "en-narrator": {
@@ -34,10 +34,13 @@ RECOMMENDED_VOICES = {
 }
 
 
-async def query_voices(locale_filter: str | None = None, gender_filter: str | None = None) -> list[dict[str, Any]]:
+async def query_voices(
+    locale_filter: str | None = None, gender_filter: str | None = None
+) -> list[dict[str, Any]]:
     """Query available Microsoft Azure Neural voices via edge-tts."""
     try:
         import edge_tts
+
         voices = await edge_tts.list_voices()
     except Exception:
         # Fallback to recommended list if offline
@@ -62,23 +65,28 @@ async def query_voices(locale_filter: str | None = None, gender_filter: str | No
         if gender_filter and gender.lower() != gender_filter.lower():
             continue
 
-        filtered.append({
-            "name": short,
-            "locale": locale,
-            "gender": gender,
-            "friendly": v.get("FriendlyName", ""),
-        })
+        filtered.append(
+            {
+                "name": short,
+                "locale": locale,
+                "gender": gender,
+                "friendly": v.get("FriendlyName", ""),
+            }
+        )
 
     filtered.sort(key=lambda x: (x["locale"], x["name"]))
     return filtered
 
 
-def get_available_voices(locale: str | None = None, gender: str | None = None) -> list[dict[str, Any]]:
+def get_available_voices(
+    locale: str | None = None, gender: str | None = None
+) -> list[dict[str, Any]]:
     """Synchronous wrapper for querying voices."""
     try:
         loop = asyncio.get_event_loop()
         if loop.is_running():
             import nest_asyncio
+
             nest_asyncio.apply()
             return loop.run_until_complete(query_voices(locale, gender))
         else:

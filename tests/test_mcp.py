@@ -2,15 +2,14 @@
 
 from __future__ import annotations
 
-import json
-from skald.mcp import StdioMCPServer, TOOL_DEFINITIONS, execute_tool
+from skald.mcp import StdioMCPServer, execute_tool
 from skald.synthesizer import parse_multivoice_turns, sanitize_speech_text
 
 
 def test_sanitize_speech_text_advanced() -> None:
     raw = """
     This is a   sentence   with    multiple   spaces.
-    
+
     Here is some **bold text** and *italic text* and [a link](https://example.com).
     $$
     \\min f(x)
@@ -39,7 +38,9 @@ def test_parse_multivoice_turns() -> None:
         "Bob": "en-US-GuyNeural",
     }
 
-    turns = parse_multivoice_turns(body, default_voice="en-US-GuyNeural", speaker_map=speaker_map)
+    turns = parse_multivoice_turns(
+        body, default_voice="en-US-GuyNeural", speaker_map=speaker_map
+    )
     assert len(turns) == 3
     assert turns[0].speaker == "Alice"
     assert turns[0].voice == "en-US-AriaNeural"

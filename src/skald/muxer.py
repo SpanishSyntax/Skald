@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import shutil
 import subprocess
 from pathlib import Path
@@ -18,9 +17,12 @@ def get_audio_duration_ms(path: Path) -> float:
     """Accurately query audio duration in milliseconds via ffprobe."""
     cmd = [
         "ffprobe",
-        "-v", "error",
-        "-show_entries", "format=duration",
-        "-of", "default=noprint_wrappers=1:nokey=1",
+        "-v",
+        "error",
+        "-show_entries",
+        "format=duration",
+        "-of",
+        "default=noprint_wrappers=1:nokey=1",
         str(path),
     ]
     try:
@@ -31,6 +33,7 @@ def get_audio_duration_ms(path: Path) -> float:
         # Fallback to mutagen
         try:
             from mutagen import File
+
             audio = File(str(path))
             if audio is not None and audio.info is not None:
                 return float(audio.info.length) * 1000.0
@@ -53,9 +56,12 @@ def concat_audio_segments(
     cmd = [
         "ffmpeg",
         "-y",
-        "-f", "concat",
-        "-safe", "0",
-        "-i", str(concat_list_path),
+        "-f",
+        "concat",
+        "-safe",
+        "0",
+        "-i",
+        str(concat_list_path),
     ]
 
     if not reencode and output_path.suffix.lower() == ".mp3":
@@ -78,12 +84,18 @@ def mux_m4b_with_chapters(
     cmd = [
         "ffmpeg",
         "-y",
-        "-i", str(audio_source),
-        "-i", str(ffmetadata_path),
-        "-map_metadata", "1",
-        "-c:a", "aac",
-        "-b:a", bitrate,
-        "-f", "mp4",
+        "-i",
+        str(audio_source),
+        "-i",
+        str(ffmetadata_path),
+        "-map_metadata",
+        "1",
+        "-c:a",
+        "aac",
+        "-b:a",
+        bitrate,
+        "-f",
+        "mp4",
         str(output_m4b),
     ]
     subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, check=True)
@@ -98,9 +110,12 @@ def export_mp3(
     cmd = [
         "ffmpeg",
         "-y",
-        "-i", str(audio_source),
-        "-c:a", "libmp3lame",
-        "-b:a", bitrate,
+        "-i",
+        str(audio_source),
+        "-c:a",
+        "libmp3lame",
+        "-b:a",
+        bitrate,
         str(output_mp3),
     ]
     subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, check=True)

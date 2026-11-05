@@ -4,16 +4,24 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import os
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Sequence
+from typing import Callable
 
 import edge_tts
 
-from skald.metadata import SectionMarker, build_ffmetadata, parse_markdown_transcript, tag_m4b_file
-from skald.muxer import concat_audio_segments, export_mp3, get_audio_duration_ms, mux_m4b_with_chapters
+from skald.metadata import (
+    build_ffmetadata,
+    parse_markdown_transcript,
+    tag_m4b_file,
+)
+from skald.muxer import (
+    concat_audio_segments,
+    export_mp3,
+    get_audio_duration_ms,
+    mux_m4b_with_chapters,
+)
 
 # Setup dedicated Skald logger
 LOG_DIR = Path.home() / ".local" / "state" / "skald"
@@ -157,12 +165,20 @@ def parse_multivoice_turns(
             current_speaker = spk_name
             current_voice = voice
             if body:
-                turns.append(DialogueTurn(speaker=current_speaker, voice=current_voice, text=body))
+                turns.append(
+                    DialogueTurn(
+                        speaker=current_speaker, voice=current_voice, text=body
+                    )
+                )
         else:
-            turns.append(DialogueTurn(speaker=current_speaker, voice=current_voice, text=p_clean))
+            turns.append(
+                DialogueTurn(speaker=current_speaker, voice=current_voice, text=p_clean)
+            )
 
     if not turns and text.strip():
-        turns.append(DialogueTurn(speaker="Narrator", voice=default_voice, text=text.strip()))
+        turns.append(
+            DialogueTurn(speaker="Narrator", voice=default_voice, text=text.strip())
+        )
 
     return turns
 
@@ -177,28 +193,53 @@ async def synthesize_chunk_with_retry(
     timeout_sec: float = 45.0,
 ) -> bool:
     """Synthesize a text chunk with resilience against server refusals, timeouts, and rate limits."""
-    logger.debug("Synthesizing chunk (%d chars) with voice %s -> %s", len(text), voice, output_path.name)
+    logger.debug(
+        "Synthesizing chunk (%d chars) with voice %s -> %s",
+        len(text),
+        voice,
+        output_path.name,
+    )
     for attempt in range(1, max_retries + 1):
         try:
             communicate = edge_tts.Communicate(text, voice, rate=rate, volume=volume)
-            await asyncio.wait_for(communicate.save(str(output_path)), timeout=timeout_sec)
+            await asyncio.wait_for(
+                communicate.save(str(output_path)), timeout=timeout_sec
+            )
             if output_path.exists() and output_path.stat().st_size > 500:
-                logger.debug("Chunk %s successfully synthesized on attempt %d", output_path.name, attempt)
+                logger.debug(
+                    "Chunk %s successfully synthesized on attempt %d",
+                    output_path.name,
+                    attempt,
+                )
                 return True
             else:
-                logger.warning("Chunk %s output file too small (<500B), retrying...", output_path.name)
+                logger.warning(
+                    "Chunk %s output file too small (<500B), retrying...",
+                    output_path.name,
+                )
         except asyncio.TimeoutError:
-            logger.warning("TTS timeout (%0.1fs) on attempt %d for chunk %s", timeout_sec, attempt, output_path.name)
+            logger.warning(
+                "TTS timeout (%0.1fs) on attempt %d for chunk %s",
+                timeout_sec,
+                attempt,
+                output_path.name,
+            )
         except Exception as e:
-            logger.warning("TTS error on attempt %d for chunk %s: %s", attempt, output_path.name, e)
+            logger.warning(
+                "TTS error on attempt %d for chunk %s: %s", attempt, output_path.name, e
+            )
 
         if attempt < max_retries:
             backoff = 2.0 * attempt
             logger.info("Backing off for %0.1fs before retry...", backoff)
             await asyncio.sleep(backoff)
 
-    logger.error("Failed to synthesize chunk %s after %d retries.", output_path.name, max_retries)
-    raise RuntimeError(f"Edge-TTS failed to synthesize chunk after {max_retries} attempts.")
+    logger.error(
+        "Failed to synthesize chunk %s after %d retries.", output_path.name, max_retries
+    )
+    raise RuntimeError(
+        f"Edge-TTS failed to synthesize chunk after {max_retries} attempts."
+    )
 
 
 async def synthesize_transcript(
@@ -244,9 +285,15 @@ async def synthesize_transcript(
 
     for idx, sec in enumerate(sections, 1):
         if progress_callback:
-            progress_callback(f"Synthesizing section {idx}/{total_sections}: {sec.title}", idx, total_sections)
+            progress_callback(
+                f"Synthesizing section {idx}/{total_sections}: {sec.title}",
+                idx,
+                total_sections,
+            )
 
-        turns = parse_multivoice_turns(sec.text, default_voice=doc_voice, speaker_map=speaker_map)
+        turns = parse_multivoice_turns(
+            sec.text, default_voice=doc_voice, speaker_map=speaker_map
+        )
         chunk_files: list[Path] = []
         c_counter = 0
 
@@ -291,7 +338,9 @@ async def synthesize_transcript(
     # Concat all sections into unified MP3
     full_mp3_temp = temp_dir / "full_audio.mp3"
     full_concat_list = temp_dir / "full_concat.txt"
-    concat_audio_segments(section_files, full_mp3_temp, full_concat_list, reencode=False)
+    concat_audio_segments(
+        section_files, full_mp3_temp, full_concat_list, reencode=False
+    )
 
     # Build FFMETADATA
     ffmeta_path = temp_dir / "ffmetadata.txt"
@@ -307,7 +356,10 @@ async def synthesize_transcript(
 
     # Clean up temp
     import shutil
+
     shutil.rmtree(temp_dir, ignore_errors=True)
 
-    logger.info("Successfully compiled audiobook: %s (%s)", m4b_path.name, mp3_path.name)
+    logger.info(
+        "Successfully compiled audiobook: %s (%s)", m4b_path.name, mp3_path.name
+    )
     return m4b_path, mp3_path
